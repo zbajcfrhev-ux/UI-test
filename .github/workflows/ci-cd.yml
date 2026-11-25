@@ -1,0 +1,78 @@
+
+name: SIBVENT CI/CD
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    name: Проверка проекта
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Получение исходного кода
+        uses: actions/checkout@v4
+
+      - name: Установка Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Установка зависимостей
+        run: npm ci
+
+      - name: Проверка ESLint
+        run: npm run lint
+
+      - name: Сборка проекта
+        run: npm run build
+
+  publish:
+    name: Сборка и публикация Docker-образов
+    needs: test
+    if: github.event_name == 'push' && github.ref_name == github.event.repository.default_branch
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Получение исходного кода
+        uses: actions/checkout@v4
+
+      - name: Подготовка имени образов
+        id: image
+        run: echo "name=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+
+      - name: Настройка Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Авторизация в GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Сборка и публикация Backend
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile.backend
+          push: true
+          tags: |
+            ${{ steps.image.outputs.name }}/backend:latest
+            ${{ steps.image.outputs.name }}/backend:${{ github.sha }}
+
+      - name: Сборка и публикация Frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile.frontend
+          push: true
+          tags: |
+            ${{ steps.image.outputs.name }}/frontend:latest
+            ${{ steps.image.outputs.name }}/frontend:${{ github.sha }}

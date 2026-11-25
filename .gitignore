@@ -23,3 +23,15 @@ dist-ssr
 *.sln
 *.sw?
 .env
+# Docker
+*.log
+
+# Environment variables
+.env
+.env.*
+
+# SSL certificates
+certs/
+*.key
+*.pem
+*.crt

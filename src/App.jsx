@@ -11,7 +11,7 @@ function App() {
   const [categories, setCategories] = useState([]);
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/products')
+    fetch('/api/products')
       .then((response) => response.json())
       .then((data) => {
         setProducts(data);
@@ -25,7 +25,7 @@ function App() {
   }, []);
 
     useEffect(() => {
-    fetch('http://localhost:5000/api/categories')
+    fetch('/api/categories')
       .then((response) => response.json())
       .then((data) => {
         setCategories(data);
